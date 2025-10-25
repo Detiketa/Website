@@ -78,7 +78,7 @@ function calcular() {
     let y = r * (e + g) - d[x];
     let l = (e + g) * r;
     let status = Math.abs(y) > 3.4 ? "No" : "Si / Probable";
-    let rowClass = Math.abs(y) > 3.4 ? "no" : "yes";
+    let rowClass = Math.abs(y) > 3.4 ? "no" : "Si";
 
     html += `<tr class="${rowClass}">
       <td>${c[x]}</td>
