@@ -74,7 +74,7 @@ function calcular() {
   let html = `<table><tr><th>Cilindro</th><th>Repeticiones</th><th>Etiqueta (mm)</th><th>Se pasa / Falta (-)</th><th>Resultado</th></tr>`;
 
   for (let x = 0; x < 4; x++) {
-    let r = Math.floor((c[x] * 3.175) / (e + 1.5));
+    let r = Math.floor((c[x] * 3.175) / (e + 1));
     let y = r * (e + g) - d[x];
     let l = (e + g) * r;
     let status = Math.abs(y) > 3.4 ? "No" : "Si / Probable";
