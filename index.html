@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Cilindros para Longitud de Etiqueta</title>
+<style>
+  body {
+    font-family: system-ui, Arial;
+    background: #f8f9fa;
+    color: #222;
+    padding: 40px;
+    max-width: 800px;
+    margin: auto;
+  }
+  h1 { color: #004aad; }
+  input, button {
+    padding: 8px 12px;
+    margin: 8px 0;
+    font-size: 1rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+  }
+  th {
+    background-color: #eef;
+  }
+  tr.yes {
+    background: #d2f8d2;
+  }
+  tr.no {
+    background: #f8d2d2;
+  }
+  .small-note {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #555;
+  }
+</style>
+</head>
+<body>
+  <h1>Programa para calcular qué cilindro es el ideal</h1>
+  <p>Referencias de cilindros:</p>
+  <p><strong>79 = 250.825</strong>  <strong>83 = 263.525</strong>  <strong>88 = 279.4</strong>  <strong>98 = 311.15</strong></p>
+
+  <label for="etk">Ingrese largo de etiqueta (mm):</label>
+  <input type="number" id="etk" placeholder="Ej: 100" step="0.01">
+  <button onclick="calcular()">Calcular</button>
+
+  <div id="resultado"></div>
+
+  <p class="small-note">
+    💡 Si todos dicen “No”, pruebe con el cilindro con menor “Se pasa/Falta(-)” y ajuste la etiqueta o el gap mayor.
+  </p>
+
+<script>
+function calcular() {
+  const e = parseFloat(document.getElementById('etk').value);
+  if (isNaN(e) || e <= 0) {
+    alert("Por favor ingrese un valor válido de largo de etiqueta.");
+    return;
+  }
+
+  let g = 3; // gap de referencia
+  const c = [79, 83, 88, 98];
+  const d = [250.825, 263.525, 279.4, 311.15];
+  let html = `<table><tr><th>Cilindro</th><th>Repeticiones</th><th>Etiqueta (mm)</th><th>Se pasa / Falta (-)</th><th>Resultado</th></tr>`;
+
+  for (let x = 0; x < 4; x++) {
+    let r = Math.floor((c[x] * 3.175) / (e + 2));
+    let y = r * (e + g) - d[x];
+    let l = (e + g) * r;
+    let status = Math.abs(y) > 3.4 ? "No" : "Yes / Probable";
+    let rowClass = Math.abs(y) > 3.4 ? "no" : "yes";
+
+    html += `<tr class="${rowClass}">
+      <td>${c[x]}</td>
+      <td>${r}</td>
+      <td>${e.toFixed(2)}</td>
+      <td>${y.toFixed(3)}</td>
+      <td>${status}</td>
+    </tr>`;
+
+    if (Math.abs(y) <= 3.4) {
+      const largoFlex = c[x] * 0.125 * 25.4;
+      const gSug = (c[x] * 0.125 / r * 25.4 - e);
+      html += `<tr><td colspan="5" style="text-align:left;">
+        <b>GAP sugerido:</b> ${gSug.toFixed(2)} mm
+        ${gSug < 2.3 ? " ⚠️ Muy pequeño, ajustar etiqueta." : ""}
+      </td></tr>`;
+    }
+  }
+
+  html += "</table>";
+  document.getElementById('resultado').innerHTML = html;
+}
+</script>
+</body>
+</html>
