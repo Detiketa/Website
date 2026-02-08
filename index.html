@@ -28,6 +28,11 @@
       <th>Cilindro</th>
       <th>REP</th>
       <th>GAP</th>
+      <th>Cilindro 1</th>
+      <th>Cilindro 2</th>
+      <th>Cilindro 3</th>
+      <th>Cilindro 4</th>
+      <th>Cilindro 5</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -53,10 +58,19 @@ function calcular() {
 
     const fila = `
       <tr>
+  <br>
+       </td>
         <td>${cilindro[i]}</td>
         <td>${RP}</td>
-        <td>${G.toFixed(2)}</td>
-      </tr>
+        <td>${G.toFixed(2)}
+        </td>
+        <td>${parseInt(((largo+3)*1)/(.125*25.4),10)}
+        <td>${parseInt(((largo+3)*2)/(.125*25.4),10)}
+        <td>${parseInt(((largo+3)*3)/(.125*25.4),10)}
+        <td>${parseInt(((largo+3)*4)/(.125*25.4),10)}
+        <td>${parseInt(((largo+3)*5)/(.125*25.4),10)}
+
+        </td>
     `;
     tbody.insertAdjacentHTML("beforeend", fila);
   }
@@ -64,6 +78,4 @@ function calcular() {
 </script>
 
 </body>
-
-  <h2> End</h2>
    </html>
