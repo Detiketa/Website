@@ -1,83 +1,273 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calculo de cilindro Detiketa.</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 40px; background: #f8f9fa; color: #333; }
-  h2 { color: #007bff; }
-  input, button { font-size: 1em; padding: 8px; margin: 8px 0; }
-  table { border-collapse: collapse; width: 60%; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-  th { background-color: #007bff; color: white; }
-  tr:nth-child(even) { background-color: #f2f2f2; }
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Calculadora Cilindros - Figuras</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #e2e8f0;
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+        }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            transition: background 0.4s;
+        }
+        .container {
+            max-width: 640px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-size: 2.1rem;
+            margin: 0.5rem 0;
+            background: linear-gradient(90deg, var(--primary), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: var(--text);
+        }
+        .card {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        input {
+            padding: 0.9rem 1.2rem;
+            font-size: 1.1rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.6rem;
+            width: 220px;
+            transition: all 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+        }
+        button {
+            padding: 0.9rem 1.8rem;
+            font-size: 1.1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.6rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        #resultado {
+            min-height: 120px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .status {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .success { color: var(--success); }
+        .warning { color: var(--warning); }
+        .danger  { color: var(--danger); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.9rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th { background: rgba(99,102,241,0.1); }
+        .copy-btn {
+            margin-top: 1rem;
+            background: #6b7280;
+        }
+        .copy-btn:hover { background: #4b5563; }
+        @media (max-width: 500px) {
+            .input-group { flex-direction: column; align-items: center; }
+            input { width: 100%; max-width: 300px; }
+        }
+    </style>
 </head>
-<body>
+<body data-theme="light">
 
-<h2>Calculo de cilindro Detiketa</h2>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+        <i class="fas fa-moon"></i>
+    </button>
 
-<label for="largo">Largo de etiqueta (mm): </label>
-<input type="number" id="largo" step="0.01">
-<button onclick="calcular()">Calcular</button>
+    <div class="container">
+        <header
+            <h1>Calculadora de Etik</h1>
+            <p style="opacity:0.8;">Cilindros 79 • 83 • 88 • 98 dientes </p>
+        </header>
 
-<table id="resultado">
-  <thead>
-    <tr>
-      <th>Cilindro</th>
-      <th>REP</th>
-      <th>GAP</th>
-      <th>Cilindro x 1 REP</th>
-      <th>Cilindro x 2 REP</th>
-      <th>Cilindro x 3 REP</th>
-      <th>Cilindro x 4 REP</th>
-      <th>Cilindro x 5 REP</th>
-      <th>Cilindro x 6 REP</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+        <div class="card">
+            <div class="input-group">
+                <input type="number" id="tamano" min="0.1" step="0.1" placeholder="Tamaño figura (mm)" autofocus>
+                <button onclick="calcular()">Calcular</button>
+            </div>
 
-<script>
-function calcular() {
-  const largo = parseFloat(document.getElementById("largo").value);
-  if (isNaN(largo) || largo <= 0) {
-    alert("Por favor, ingresa un valor válido para el largo de la etiqueta.");
-    return;
-  }
+            <div id="resultado">
+                Ingresa el tamaño de la figura y presiona Calcular
+            </div>
+        </div>
+    </div>
 
-  const cilindro = [79, 83, 88, 98];
-  const largo_c = [250.825, 263.525, 279.4, 311.15];
-  const tbody = document.querySelector("#resultado tbody");
-  tbody.innerHTML = "";
+    <script>
+        const pitch = 0.125;
+        const conv = 25.4;
+        const cilindros = [79, 83, 88, 98];
+        const minGap = 2.;
+        const maxGap = 3.72;
 
-  for (let i = 0; i < cilindro.length; i++) {
-    const rep = largo_c[i] / (largo + 1.8);
-    const RP = Math.floor(rep);
-    const G = (largo_c[i] - largo * RP) / RP;
+        function circ(z) { return z * pitch * conv; }
 
-    const fila = `
-      <tr>
-  <br>
-       </td>
-        <td>${cilindro[i]}</td>
-        <td>${RP}</td>
-        <td>${G.toFixed(2)}
-        </td>
-        <td>${parseInt(((largo+3)*1)/(.125*25.4),10)}
-        <td>${parseInt(((largo+3)*2)/(.125*25.4),10)}
-        <td>${parseInt(((largo+3)*3)/(.125*25.4),10)}
-        <td>${parseInt(((largo+3)*4)/(.125*25.4),10)}
-        <td>${parseInt(((largo+3)*5)/(.125*25.4),10)}
-        <td>${parseInt(((largo+3)*6)/(.125*25.4),10)}
+        function puedeAjustar(C, w) {
+            let maxN = Math.floor(C / w);
+            let mejores = [];
+            for (let n = maxN; n >= 1; n--) {
+                let gap = (C - n * w) / n;
+                if (gap >= minGap && gap <= maxGap) {
+                    mejores.push({n, gap});
+                }
+            }
+            return mejores;
+        }
 
-        </td>
-    `;
-    tbody.insertAdjacentHTML("beforeend", fila);
-  }
-}
-</script>
+        function sugerirCilindroMinimo(w) {
+            let z = Math.ceil((w + minGap) / (pitch * conv));
+            while (true) {
+                let C = circ(z);
+                let ajustes = puedeAjustar(C, w);
+                if (ajustes.length > 0) {
+                    let mejor = ajustes[0]; // el de más figuras
+                    return { z, C, ...mejor };
+                }
+                z++;
+            }
+        }
 
+        function calcular() {
+            const input = document.getElementById('tamano');
+            const resDiv = document.getElementById('resultado');
+            const val = parseFloat(input.value);
+
+            if (isNaN(val) || val <= 0) {
+                resDiv.innerHTML = '<span class="danger">Ingresa un tamaño válido mayor a 0 mm</span>';
+                return;
+            }
+
+            let html = `<div class="status">Figura de <strong>${val.toFixed(2)} mm</strong></div>`;
+
+            let filas = [];
+            let encontrado = false;
+
+            cilindros.forEach(z => {
+                const C = circ(z);
+                const ajustes = puedeAjustar(C, val);
+                if (ajustes.length > 0) {
+                    encontrado = true;
+                    const mejor = ajustes[0];
+                    filas.push(`
+                        <tr>
+                            <td>${z} dientes</td>
+                            <td>${C.toFixed(1)} mm</td>
+                            <td><strong>${mejor.n}</strong></td>
+                            <td><strong>${mejor.gap.toFixed(2)} mm</strong></td>
+                        </tr>
+                    `);
+                }
+            });
+
+            if (encontrado) {
+                html += '<p class="success">¡Cabe en los siguientes cilindros!</p>';
+                html += `
+                    <table>
+                        <thead>
+                            <tr><th>Cilindro</th><th>Dientes</th><th>Etiketas</th><th>Gap</th></tr>
+                        </thead>
+                                                <tbody>${filas.join('')}</tbody>
+                    </table>
+                `;
+            } else {
+                const sug = sugerirCilindroMinimo(val);
+                html += '<p class="warning">No se ajusta a ninguno de los cilindros disponibles (79/83/88/98).</p>';
+                html += `
+                    <p class="success">Sugerencia: Cilindro de <strong>${sug.z}*2 dientes</strong></p>
+                    <table>
+                        <tr><td>Circunferencia:</td><td>${sug.C.toFixed(1)} mm</td></tr>
+                        <tr><td>Figuras:</td><td><strong>${sug.n}</strong></td></tr>
+                        <tr><td>Gap:</td><td><strong>${sug.gap.toFixed(2)} mm</strong></td></tr>
+                    </table>
+                `;
+            }
+
+            html += '<button class="copy-btn" onclick="copiarResultado()">Copiar resultado <i class="fas fa-copy"></i></button>';
+            resDiv.innerHTML = html;
+        }
+
+        function copiarResultado() {
+            const text = document.getElementById('resultado').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Resultado copiado al portapapeles');
+            });
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.querySelector('.theme-toggle i');
+            if (body.dataset.theme === 'dark') {
+                body.dataset.theme = 'light';
+                icon.classList.replace('fa-sun', 'fa-moon');
+            } else {
+                body.dataset.theme = 'dark';
+                icon.classList.replace('fa-moon', 'fa-sun');
+            }
+        }
+    </script>
 </body>
-   </html>
+</html>
