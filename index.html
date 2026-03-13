@@ -15,6 +15,7 @@
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
+            --info: #3b82f6;
         }
         [data-theme="dark"] {
             --bg: #0f172a;
@@ -111,6 +112,15 @@
         .success { color: var(--success); }
         .warning { color: var(--warning); }
         .danger  { color: var(--danger); }
+        .info    { color: var(--info); }
+        
+        .sugerencia-box {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 1.2rem;
+            border-radius: 0.8rem;
+            border-left: 5px solid var(--info);
+            margin-top: 1rem;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -123,8 +133,9 @@
         }
         th { background: rgba(99,102,241,0.1); }
         .copy-btn {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             background: #6b7280;
+            width: 100%;
         }
         .copy-btn:hover { background: #4b5563; }
         @media (max-width: 500px) {
@@ -140,7 +151,7 @@
     </button>
 
     <div class="container">
-        <header
+        <header>
             <h1>Calculadora de Etik</h1>
             <p style="opacity:0.8;">Cilindros 79 • 83 • 88 • 98 dientes </p>
         </header>
@@ -161,7 +172,7 @@
         const pitch = 0.125;
         const conv = 25.4;
         const cilindros = [79, 83, 88, 98];
-        const minGap = 2.;
+        const minGap = 2.0;
         const maxGap = 3.72;
 
         function circ(z) { return z * pitch * conv; }
@@ -178,17 +189,33 @@
             return mejores;
         }
 
-        function sugerirCilindroMinimo(w) {
-            let z = Math.ceil((w + minGap) / (pitch * conv));
-            while (true) {
-                let C = circ(z);
-                let ajustes = puedeAjustar(C, w);
-                if (ajustes.length > 0) {
-                    let mejor = ajustes[0]; // el de más figuras
-                    return { z, C, ...mejor };
+        /**
+         * Busca el ajuste más cercano iterando hacia arriba y hacia abajo
+         */
+        function buscarAjusteBidireccional(originalW) {
+            let offset = 0.1;
+            const maxIter = 100; // Busca hasta 10mm en ambas direcciones
+
+            while (offset < 10) {
+                // Probar reduciendo tamaño (más pequeño)
+                let smallerW = parseFloat((originalW - offset).toFixed(2));
+                if (smallerW > 0) {
+                    for (let z of cilindros) {
+                        let ajustes = puedeAjustar(circ(z), smallerW);
+                        if (ajustes.length > 0) return { nuevaW: smallerW, z, n: ajustes[0].n, gap: ajustes[0].gap, diff: -offset };
+                    }
                 }
-                z++;
+
+                // Probar aumentando tamaño (más grande)
+                let largerW = parseFloat((originalW + offset).toFixed(2));
+                for (let z of cilindros) {
+                    let ajustes = puedeAjustar(circ(z), largerW);
+                    if (ajustes.length > 0) return { nuevaW: largerW, z, n: ajustes[0].n, gap: ajustes[0].gap, diff: offset };
+                }
+
+                offset = parseFloat((offset + 0.1).toFixed(2));
             }
+            return null;
         }
 
         function calcular() {
@@ -202,48 +229,46 @@
             }
 
             let html = `<div class="status">Figura de <strong>${val.toFixed(2)} mm</strong></div>`;
-
-            let filas = [];
             let encontrado = false;
+            let filas = [];
 
+            // 1. Verificar tamaño original
             cilindros.forEach(z => {
                 const C = circ(z);
                 const ajustes = puedeAjustar(C, val);
                 if (ajustes.length > 0) {
                     encontrado = true;
-                    const mejor = ajustes[0];
-                    filas.push(`
-                        <tr>
-                            <td>${z} dientes</td>
-                            <td>${C.toFixed(1)} mm</td>
-                            <td><strong>${mejor.n}</strong></td>
-                            <td><strong>${mejor.gap.toFixed(2)} mm</strong></td>
-                        </tr>
-                    `);
+                    filas.push(`<tr><td>${z} Z</td><td>${C.toFixed(1)}mm</td><td>${ajustes[0].n}</td><td>${ajustes[0].gap.toFixed(2)}mm</td></tr>`);
                 }
             });
 
             if (encontrado) {
-                html += '<p class="success">¡Cabe en los siguientes cilindros!</p>';
-                html += `
-                    <table>
-                        <thead>
-                            <tr><th>Cilindro</th><th>Dientes</th><th>Etiketas</th><th>Gap</th></tr>
-                        </thead>
-                                                <tbody>${filas.join('')}</tbody>
-                    </table>
-                `;
+                html += '<p class="success"><i class="fas fa-check-circle"></i> Ajuste perfecto:</p>';
+                html += `<table><thead><tr><th>Z</th><th>Circ.</th><th>Etiq.</th><th>Gap</th></tr></thead><tbody>${filas.join('')}</tbody></table>`;
             } else {
-                const sug = sugerirCilindroMinimo(val);
-                html += '<p class="warning">No se ajusta a ninguno de los cilindros disponibles (79/83/88/98).</p>';
-                html += `
-                    <p class="success">Sugerencia: Cilindro de <strong>${sug.z}*2 dientes</strong></p>
-                    <table>
-                        <tr><td>Circunferencia:</td><td>${sug.C.toFixed(1)} mm</td></tr>
-                        <tr><td>Figuras:</td><td><strong>${sug.n}</strong></td></tr>
-                        <tr><td>Gap:</td><td><strong>${sug.gap.toFixed(2)} mm</strong></td></tr>
-                    </table>
-                `;
+                // 2. Buscar ajuste más cercano (+/-)
+                const sug = buscarAjusteBidireccional(val);
+                html += '<p class="danger"><i class="fas fa-exclamation-triangle"></i> Sin ajuste exacto.</p>';
+                
+                if (sug) {
+                    const colorClass = sug.diff > 0 ? 'warning' : 'info';
+                    const icon = sug.diff > 0 ? 'expand' : 'compress';
+                    
+                    html += `
+                        <div class="sugerencia-box" style="border-left-color: var(--${colorClass})">
+                            <p class="${colorClass}" style="margin-top:0;">
+                                <i class="fas fa-${icon}"></i> <strong>Ajuste recomendado (${sug.diff > 0 ? 'Aumentar' : 'Reducir'}):</strong>
+                            </p>
+                            <p>Nueva medida: <strong>${sug.nuevaW.toFixed(2)} mm</strong> <small>(${sug.diff > 0 ? '+' : ''}${sug.diff.toFixed(2)} mm)</small></p>
+                            <hr style="opacity:0.1">
+                            <table>
+                                <tr><td>Cilindro:</td><td><strong>${sug.z} dientes</strong></td></tr>
+                                <tr><td>Figuras:</td><td><strong>${sug.n}</strong></td></tr>
+                                <tr><td>Gap Sugerido:</td><td><strong>${sug.gap.toFixed(2)} mm</strong></td></tr>
+                            </table>
+                        </div>
+                    `;
+                }
             }
 
             html += '<button class="copy-btn" onclick="copiarResultado()">Copiar resultado <i class="fas fa-copy"></i></button>';
@@ -253,7 +278,7 @@
         function copiarResultado() {
             const text = document.getElementById('resultado').innerText;
             navigator.clipboard.writeText(text).then(() => {
-                alert('Resultado copiado al portapapeles');
+                alert('Resultado copiado');
             });
         }
 
