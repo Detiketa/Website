@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Etiquetas:</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --cyan: #06b6d4;
+            --magenta: #ec4899;
+            --yellow: #eab308;
+            --black: #334155;
+            --success: #059669;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+        }
+        h1 { font-size: 1.6rem; text-align: center; margin-bottom: 5px; color: #0f172a; }
+        .subtitle { text-align: center; color: #64748b; margin-bottom: 25px; font-size: 0.95rem; }
+        h2 { font-size: 1.15rem; color: #0f172a; margin-top: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
+        
+        .drop-zone {
+            border: 3px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            background: #fdfdfd;
+            transition: all 0.2s;
+        }
+        .drop-zone:hover, .drop-zone.dragover { background-color: #f0f9ff; border-color: var(--primary); }
+        #fileInput { display: none; }
+        .loading { display: none; margin: 20px 0; text-align: center; font-weight: bold; color: var(--primary); }
+        .results { display: none; margin-top: 25px; }
+        
+        .config-panel {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
+        .form-group input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; }
+
+        .cmyk-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .cmyk-card { padding: 12px; border-radius: 8px; text-align: center; color: white; font-weight: bold; }
+        .card-c { background-color: var(--cyan); }
+        .card-m { background-color: var(--magenta); }
+        .card-y { background-color: var(--yellow); color: #000; }
+        .card-k { background-color: var(--black); }
+        .card-value { font-size: 1.25rem; margin-top: 5px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }
+        th { background-color: #f8fafc; color: #0f172a; }
+        
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .kpi-card {
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .kpi-card.cost { background-color: #f0fdf4; border-color: #bbf7d0; color: var(--success); }
+        .kpi-card.volume { background-color: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
+        .kpi-title { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; color: #64748b; }
+        .kpi-value { font-size: 1.7rem; font-weight: bold; }
+
+        .preview-container {
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #cbd5e1;
+            padding: 15px;
+        }
+        canvas { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Cálculo de Tinta</h1>
+    <div class="subtitle">Análisis de espectro gráfico adaptado con corrección automática de orientación visual</div>
+    
+    <div class="config-panel">
+        <div class="form-group">
+            <label for="costPerMl">Costo de tinta por ml ($):</label>
+            <input type="number" id="costPerMl" value="2800" step="1" min="0">
+        </div>
+        <div class="form-group">
+            <label for="baseCons">Estándar de Consumo Memjet (ml/m² al 100%):</label>
+            <input type="number" id="baseCons" value="8" readonly style="background-color: #e2e8f0; color: #475569; font-weight: bold;">
+            <small style="color: #64748b; margin-top:2px;">Equivale a 0.000008 ml por mm² neta</small>
+        </div>
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+        <p>Arrastra el archivo PDF de la etiqueta aquí o <strong>haz clic para examinar</strong></p>
+        <input type="file" id="fileInput" accept="application/pdf">
+    </div>
+
+    <div class="loading" id="loading">Analizando dimensiones vectoriales y densidad CMYK...</div>
+
+    <div class="results" id="results">
+        <h2>Dimensiones Reales de la Etiqueta</h2>
+        <table>
+            <tr>
+                <th>Ancho</th>
+                <th>Alto</th>
+                <th>Área Superficial ($mm^2$)</th>
+                <th>Área Superficial ($cm^2$)</th>
+            </tr>
+            <tr style="font-weight: bold; background-color: #f8fafc;">
+                <td id="mmWidth">0 mm</td>
+                <td id="mmHeight">0 mm</td>
+                <td id="areaMm2" style="color: #0284c7;">0.00 mm²</td>
+                <td id="areaCm2">0.00 cm²</td>
+            </tr>
+        </table>
+
+        <h2>Porcentaje de Cobertura de Tinta</h2>
+        <div class="cmyk-grid">
+            <div class="cmyk-card card-c"><div>Cian (C)</div><div class="card-value" id="cyanVal">0%</div></div>
+            <div class="cmyk-card card-m"><div>Magenta (M)</div><div class="card-value" id="magentaVal">0%</div></div>
+            <div class="cmyk-card card-y"><div>Amarillo (Y)</div><div class="card-value" id="yellowVal">0%</div></div>
+            <div class="cmyk-card card-k"><div>Negro (K)</div><div class="card-value" id="blackVal">0%</div></div>
+        </div>
+        <p style="font-size: 0.85rem; color:#64748b; margin-top: -5px;">Densidad total acumulada de canales: <span id="totalCmykPercent" style="font-weight:bold; color:#1e293b;">0%</span></p>
+
+        <h2>Resultados de Consumo (1 Sola Etiqueta)</h2>
+        
+        <div class="kpi-container">
+            <div class="kpi-card volume">
+                <div class="kpi-title">Volumen de Tinta Consumido</div>
+                <div class="kpi-value" id="totalMlSpent">0.00000 ml</div>
+            </div>
+            <div class="kpi-card cost">
+                <div class="kpi-title">Costo Económico Calculado</div>
+                <div class="kpi-value" id="calculatedCost">$0.00</div>
+            </div>
+        </div>
+
+        <table style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th colspan="2">Desglose de Inyección Unitaria</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Consumo promedio real en **un solo milímetro cuadrado ($1\text{ mm}^2$)** de este archivo:</td>
+                    <td style="text-align: right; font-weight: bold; color: #0369a1;" id="mlPerSingleMm2">0.00000000 ml</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Vista Previa (Orientación de Impresión)</h2>
+        <div class="preview-container">
+            <canvas id="pdfCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const canvas = document.getElementById('pdfCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    
+    const costPerMlInput = document.getElementById('costPerMl');
+
+    let labelAreaMm2 = 0;
+    let labelAreaCm2 = 0;
+    let totalCmykFactor = 0; 
+    
+    const CONSUMO_BASE_MM2 = 0.000008; 
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) processPDF(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) processPDF(e.target.files[0]);
+    });
+
+    costPerMlInput.addEventListener('input', calculateMemjetMetrics);
+
+    async function processPDF(file) {
+        if (file.type !== "application/pdf") {
+            alert("Sube un formato PDF válido.");
+            return;
+        }
+
+        loading.style.display = 'block';
+        results.style.display = 'none';
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const page = await pdf.getPage(1);
+            
+            // 1. EXTRAER DIMENSIONES CONSIDERANDO LA ROTACIÓN INTERNA DEL PDF
+            // page.getViewport({ scale: 1.0 }) sin rotación manual hereda la rotación nativa (0, 90, 180, 270)
+            const viewport = page.getViewport({ scale: 1.0 }); 
+            
+            const ptW = viewport.width;
+            const ptH = viewport.height;
+
+            // Convertir puntos a mm (1 pt = 0.352778 mm)
+            const mmW = ptW * 0.352778;
+            const mmH = ptH * 0.352778;
+            
+            labelAreaMm2 = mmW * mmH;
+            labelAreaCm2 = labelAreaMm2 / 100;
+
+            // 2. CONFIGURAR CANVASES CON ROTACIÓN CONTROLADA
+            const scale = 1.5; 
+            // Esto asegura que si el PDF viene girado de origen, el renderizador lo fuerce a mantenerse recto
+            const renderViewport = page.getViewport({ scale: scale, rotation: page.rotate });
+            
+            canvas.width = renderViewport.width;
+            canvas.height = renderViewport.height;
+
+            await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+
+            // 3. ESCANEO MATEMÁTICO RGB A CMYK PÍXEL POR PÍXEL
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            const totalPixels = canvas.width * canvas.height;
+
+            let sumC = 0, sumM = 0, sumY = 0, sumK = 0;
+
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+
+                if (a === 0) continue; // Descartar fondos transparentes
+
+                let rNorm = r / 255;
+                let gNorm = g / 255;
+                let bNorm = b / 255;
+
+                let k = 1 - Math.max(rNorm, gNorm, bNorm);
+                let c = (k === 1) ? 0 : (1 - rNorm - k) / (1 - k);
+                let m = (k === 1) ? 0 : (1 - gNorm - k) / (1 - k);
+                let y = (k === 1) ? 0 : (1 - bNorm - k) / (1 - k);
+
+                sumC += c; sumM += m; sumY += y; sumK += k;
+            }
+
+            totalCmykFactor = (sumC + sumM + sumY + sumK) / totalPixels;
+
+            // Renderizar datos en UI
+            document.getElementById('mmWidth').textContent = `${mmW.toFixed(1)} mm`;
+            document.getElementById('mmHeight').textContent = `${mmH.toFixed(1)} mm`;
+            document.getElementById('areaMm2').textContent = `${labelAreaMm2.toLocaleString(undefined, {maximumFractionDigits: 2})} mm²`;
+            document.getElementById('areaCm2').textContent = `${labelAreaCm2.toFixed(2)} cm²`;
+
+            document.getElementById('cyanVal').textContent = `${((sumC / totalPixels) * 100).toFixed(1)}%`;
+            document.getElementById('magentaVal').textContent = `${((sumM / totalPixels) * 100).toFixed(1)}%`;
+            document.getElementById('yellowVal').textContent = `${((sumY / totalPixels) * 100).toFixed(1)}%`;
+            document.getElementById('blackVal').textContent = `${((sumK / totalPixels) * 100).toFixed(1)}%`;
+            document.getElementById('totalCmykPercent').textContent = `${(totalCmykFactor * 100).toFixed(1)}%`;
+
+            calculateMemjetMetrics();
+
+            loading.style.display = 'none';
+            results.style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            alert("Error procesando los canales gráficos de la etiqueta.");
+            loading.style.display = 'none';
+        }
+    }
+
+    function calculateMemjetMetrics() {
+        if (labelAreaMm2 === 0) return;
+
+        const costPerMl = parseFloat(costPerMlInput.value) || 0;
+
+        const mlRealPerMm2 = CONSUMO_BASE_MM2 * totalCmykFactor;
+        const totalMlLabel = mlRealPerMm2 * labelAreaMm2;
+        const totalCostLabel = totalMlLabel * costPerMl;
+
+        document.getElementById('mlPerSingleMm2').textContent = `${mlRealPerMm2.toFixed(8)} ml`;
+        document.getElementById('totalMlSpent').textContent = `${totalMlLabel.toFixed(5)} ml`;
+        document.getElementById('calculatedCost').textContent = `$${totalCostLabel.toFixed(2)}`;
+    }
+</script>
+
+</body>
+</html>
