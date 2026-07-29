@@ -7,201 +7,382 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
         :root {
-            --primary: #0284c7;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --text: #1e293b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
             --cyan: #06b6d4;
+            --cyan-bg: #ecfeff;
             --magenta: #ec4899;
+            --magenta-bg: #fdf2f8;
             --yellow: #eab308;
+            --yellow-bg: #fefce8;
             --black: #334155;
-            --success: #059669;
+            --black-bg: #f8fafc;
+            
+            --accent-green: #059669;
+            --accent-green-bg: #ecfdf5;
+            --accent-blue: #0284c7;
+            --accent-blue-bg: #f0f9ff;
+            --accent-purple: #7c3aed;
+            --accent-purple-bg: #f5f3ff;
         }
+
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--background);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 840px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 0 0 6px 0;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        /* Color-accented Config Inputs */
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
             display: flex;
             flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            max-width: 900px;
-            width: 100%;
-            background: var(--surface);
-            padding: 30px;
+            padding: 12px 14px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--border-color);
+            transition: border-color 0.2s ease;
         }
-        h1 { font-size: 1.6rem; text-align: center; margin-bottom: 5px; color: #0f172a; }
-        .subtitle { text-align: center; color: #64748b; margin-bottom: 25px; font-size: 0.95rem; }
-        h2 { font-size: 1.15rem; color: #0f172a; margin-top: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
-        
+
+        .form-group.cost-group { background: var(--accent-purple-bg); border-color: #ddd6fe; }
+        .form-group.vol-group { background: var(--accent-blue-bg); border-color: #bae6fd; }
+        .form-group.calc-group { background: var(--accent-green-bg); border-color: #a7f3d0; }
+        .form-group.base-group { background: #fff7ed; border-color: #fed7aa; }
+
+        .form-group label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .form-group input {
+            border: none;
+            background: transparent;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .form-group input[readonly] {
+            color: var(--accent-green);
+        }
+
+        /* Minimal Colorful Upload Area */
         .drop-zone {
-            border: 3px dashed #cbd5e1;
-            border-radius: 8px;
-            padding: 30px;
+            border: 2px dashed #0284c7;
+            border-radius: 14px;
+            padding: 35px 20px;
             text-align: center;
             cursor: pointer;
-            background: #fdfdfd;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            background: var(--accent-blue-bg);
         }
-        .drop-zone:hover, .drop-zone.dragover { background-color: #f0f9ff; border-color: var(--primary); }
-        #fileInput { display: none; }
-        .loading { display: none; margin: 20px 0; text-align: center; font-weight: bold; color: var(--primary); }
-        .results { display: none; margin-top: 25px; }
-        
-        .config-panel {
-            background-color: #f1f5f9;
-            padding: 15px;
-            border-radius: 8px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
-        .form-group input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; }
-        .form-group input[readonly] { background-color: #e2e8f0; color: #334155; cursor: not-allowed; }
 
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-purple);
+            background: var(--accent-purple-bg);
+        }
+
+        .drop-zone p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .drop-zone p strong {
+            color: var(--accent-blue);
+        }
+
+        #fileInput { display: none; }
+
+        .loading {
+            display: none;
+            margin: 25px 0;
+            text-align: center;
+            font-weight: 600;
+            color: var(--accent-purple);
+            font-size: 0.95rem;
+        }
+
+        .results { display: none; margin-top: 35px; }
+
+        h2 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin: 35px 0 15px 0;
+        }
+
+        /* CMYK Vibrant Minimalist Cards */
         .cmyk-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 12px;
-            margin: 15px 0;
         }
-        .cmyk-card { padding: 12px; border-radius: 8px; text-align: center; color: white; font-weight: bold; }
-        .card-c { background-color: var(--cyan); }
-        .card-m { background-color: var(--magenta); }
-        .card-y { background-color: var(--yellow); color: #000; }
-        .card-k { background-color: var(--black); }
-        .card-value { font-size: 1.25rem; margin-top: 5px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }
-        th { background-color: #f8fafc; color: #0f172a; }
-        
-        .kpi-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+        .cmyk-card {
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid transparent;
         }
+
+        .cmyk-card .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.9; }
+        .cmyk-card .val { font-size: 1.4rem; font-weight: 800; margin-top: 4px; }
+
+        .card-c { background-color: var(--cyan-bg); color: var(--cyan); border-color: #a5f3fc; }
+        .card-m { background-color: var(--magenta-bg); color: var(--magenta); border-color: #fbcfe8; }
+        .card-y { background-color: var(--yellow-bg); color: #854d0e; border-color: #fef08a; }
+        .card-k { background-color: var(--black-bg); color: var(--black); border-color: #cbd5e1; }
+
+        /* Minimal Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .badge-c { background-color: var(--cyan); }
+        .badge-m { background-color: var(--magenta); }
+        .badge-y { background-color: var(--yellow); }
+        .badge-k { background-color: var(--black); }
+
+        /* KPI Colorful Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
         .kpi-card {
             padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            background: var(--accent-blue-bg);
+            border-color: #bae6fd;
         }
-        .kpi-card.cost { background-color: #f0fdf4; border-color: #bbf7d0; color: var(--success); }
-        .kpi-card.volume { background-color: #f0f9ff; border-color: #bae6fd; color: #0369a1; }
-        .kpi-title { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; color: #64748b; }
-        .kpi-value { font-size: 1.7rem; font-weight: bold; }
 
+        .kpi-card.cost-card {
+            background: var(--accent-green-bg);
+            border-color: #a7f3d0;
+        }
+
+        .kpi-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+        }
+
+        .cost-card .kpi-value { color: var(--accent-green); }
+
+        /* Minimal Preview Container */
         .preview-container {
-            margin-top: 25px;
             display: flex;
             justify-content: center;
-            max-height: 400px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 14px;
+            max-height: 350px;
             overflow-y: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background: #cbd5e1;
-            padding: 15px;
+            border: 1px solid var(--border-color);
         }
-        canvas { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Cálculo de Tinta</h1>
-    <div class="subtitle">Análisis de espectro gráfico adaptado con corrección automática de orientación visual</div>
-    
-    <div class="config-panel">
-        <div class="form-group">
-            <label for="cartridgeCost">Costo por Cartucho ($):</label>
-            <input type="number" id="cartridgeCost" value="2800" step="1" min="0">
+    <header>
+        <h1>Cálculo de Tinta</h1>
+        <p class="subtitle">Análisis de espectro gráfico y costo por etiqueta</p>
+    </header>
+
+    <div class="config-grid">
+        <div class="form-group cost-group">
+            <label for="cartridgeCost">Costo Cartucho ($)</label>
+            <input type="number" id="cartridgeCost" value="140000" step="1" min="0">
         </div>
-        <div class="form-group">
-            <label for="cartridgeVolume">Tinta por Cartucho (ml):</label>
-            <input type="number" id="cartridgeVolume" value="1" step="0.1" min="0.01">
+        <div class="form-group vol-group">
+            <label for="cartridgeVolume">Volumen (ml)</label>
+            <input type="number" id="cartridgeVolume" value="25" step="0.1" min="0.01">
         </div>
-        <div class="form-group">
-            <label for="costPerMl">Costo calculado por ml ($):</label>
-            <input type="number" id="costPerMl" value="2800" readonly>
+        <div class="form-group calc-group">
+            <label for="costPerMl">Costo / ml ($)</label>
+            <input type="number" id="costPerMl" value="5600" readonly>
         </div>
-        <div class="form-group">
-            <label for="baseCons">Estándar Consumo (ml/m² al 100%):</label>
+        <div class="form-group base-group">
+            <label for="baseCons">Consumo (ml/m² 100%)</label>
             <input type="number" id="baseCons" value="8" step="0.1" min="0">
-            <small id="baseConsHelp" style="color: #64748b; margin-top:2px;">Equivale a 0.000008 ml por mm² neta</small>
         </div>
     </div>
 
     <div class="drop-zone" id="dropZone">
-        <p>Arrastra el archivo PDF de la etiqueta aquí o <strong>haz clic para examinar</strong></p>
+        <p>Arrastra el archivo PDF aquí o <strong>haz clic para seleccionar</strong></p>
         <input type="file" id="fileInput" accept="application/pdf">
     </div>
 
     <div class="loading" id="loading">Analizando dimensiones vectoriales y densidad CMYK...</div>
 
     <div class="results" id="results">
-        <h2>Dimensiones Reales de la Etiqueta</h2>
+        <h2>Dimensiones Reales</h2>
         <table>
-            <tr>
-                <th>Ancho</th>
-                <th>Alto</th>
-                <th>Área Superficial (mm²)</th>
-                <th>Área Superficial (cm²)</th>
-            </tr>
-            <tr style="font-weight: bold; background-color: #f8fafc;">
-                <td id="mmWidth">0 mm</td>
-                <td id="mmHeight">0 mm</td>
-                <td id="areaMm2" style="color: #0284c7;">0.00 mm²</td>
-                <td id="areaCm2">0.00 cm²</td>
-            </tr>
-        </table>
-
-        <h2>Porcentaje de Cobertura de Tinta</h2>
-        <div class="cmyk-grid">
-            <div class="cmyk-card card-c"><div>Cian (C)</div><div class="card-value" id="cyanVal">0%</div></div>
-            <div class="cmyk-card card-m"><div>Magenta (M)</div><div class="card-value" id="magentaVal">0%</div></div>
-            <div class="cmyk-card card-y"><div>Amarillo (Y)</div><div class="card-value" id="yellowVal">0%</div></div>
-            <div class="cmyk-card card-k"><div>Negro (K)</div><div class="card-value" id="blackVal">0%</div></div>
-        </div>
-        <p style="font-size: 0.85rem; color:#64748b; margin-top: -5px;">Densidad total acumulada de canales: <span id="totalCmykPercent" style="font-weight:bold; color:#1e293b;">0%</span></p>
-
-        <h2>Resultados de Consumo (1 Sola Etiqueta)</h2>
-        
-        <div class="kpi-container">
-            <div class="kpi-card volume">
-                <div class="kpi-title">Volumen de Tinta Consumido</div>
-                <div class="kpi-value" id="totalMlSpent">0.00000 ml</div>
-            </div>
-            <div class="kpi-card cost">
-                <div class="kpi-title">Costo Económico Calculado</div>
-                <div class="kpi-value" id="calculatedCost">$0.00</div>
-            </div>
-        </div>
-
-        <table style="margin-top: 20px;">
             <thead>
                 <tr>
-                    <th colspan="2">Desglose de Inyección Unitaria</th>
+                    <th>Ancho</th>
+                    <th>Alto</th>
+                    <th>Área (mm²)</th>
+                    <th>Área (cm²)</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Consumo promedio real en **un solo milímetro cuadrado (1 mm²)** de este archivo:</td>
-                    <td style="text-align: right; font-weight: bold; color: #0369a1;" id="mlPerSingleMm2">0.00000000 ml</td>
+                <tr style="font-weight: 700;">
+                    <td id="mmWidth">0 mm</td>
+                    <td id="mmHeight">0 mm</td>
+                    <td id="areaMm2" style="color: var(--accent-blue);">0.00 mm²</td>
+                    <td id="areaCm2">0.00 cm²</td>
                 </tr>
             </tbody>
         </table>
 
-        <h2>Vista Previa (Orientación de Impresión)</h2>
+        <h2>Cobertura de Tinta</h2>
+        <div class="cmyk-grid">
+            <div class="cmyk-card card-c"><div class="label">Cian</div><div class="val" id="cyanVal">0%</div></div>
+            <div class="cmyk-card card-m"><div class="label">Magenta</div><div class="val" id="magentaVal">0%</div></div>
+            <div class="cmyk-card card-y"><div class="label">Amarillo</div><div class="val" id="yellowVal">0%</div></div>
+            <div class="cmyk-card card-k"><div class="label">Negro</div><div class="val" id="blackVal">0%</div></div>
+        </div>
+
+        <h2>Resultados (1 Etiqueta)</h2>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Volumen Consumido</div>
+                <div class="kpi-value" id="totalMlSpent">0.00000 ml</div>
+            </div>
+            <div class="kpi-card cost-card">
+                <div class="kpi-title">Costo Calculado</div>
+                <div class="kpi-value" id="calculatedCost">$0.00</div>
+            </div>
+        </div>
+
+        <h2>Inyección Unitaria por Canal</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Canal</th>
+                    <th style="text-align: right;">Cobertura / mm²</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge badge-c"></span>Cian (C)</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--cyan);" id="cyanMlMm2">0.00000000 ml</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-m"></span>Magenta (M)</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--magenta);" id="magentaMlMm2">0.00000000 ml</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-y"></span>Amarillo (Y)</td>
+                    <td style="text-align: right; font-weight: 700; color: #854d0e;" id="yellowMlMm2">0.00000000 ml</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-k"></span>Negro (K)</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--black);" id="blackMlMm2">0.00000000 ml</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Vista Previa</h2>
         <div class="preview-container">
             <canvas id="pdfCanvas"></canvas>
         </div>
@@ -215,150 +396,135 @@
     const fileInput = document.getElementById('fileInput');
     const loading = document.getElementById('loading');
     const results = document.getElementById('results');
-    const canvas = document.getElementById('pdfCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    
     const cartridgeCostInput = document.getElementById('cartridgeCost');
     const cartridgeVolumeInput = document.getElementById('cartridgeVolume');
     const costPerMlInput = document.getElementById('costPerMl');
     const baseConsInput = document.getElementById('baseCons');
-    const baseConsHelp = document.getElementById('baseConsHelp');
 
-    let labelAreaMm2 = 0;
-    let labelAreaCm2 = 0;
-    let totalCmykFactor = 0; 
+    let currentAnalysis = null;
+
+    function updateCostPerMl() {
+        const cost = parseFloat(cartridgeCostInput.value) || 0;
+        const vol = parseFloat(cartridgeVolumeInput.value) || 1;
+        costPerMlInput.value = (cost / vol).toFixed(2);
+        if (currentAnalysis) renderResults(currentAnalysis);
+    }
+
+    cartridgeCostInput.addEventListener('input', updateCostPerMl);
+    cartridgeVolumeInput.addEventListener('input', updateCostPerMl);
+    baseConsInput.addEventListener('input', () => {
+        if (currentAnalysis) renderResults(currentAnalysis);
+    });
 
     dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
     dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) processPDF(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
     fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) processPDF(e.target.files[0]);
+        if (e.target.files.length) handleFile(e.target.files[0]);
     });
 
-    // Escuchadores de eventos para recalcular al cambiar costo o volumen del cartucho
-    cartridgeCostInput.addEventListener('input', updateCostPerMl);
-    cartridgeVolumeInput.addEventListener('input', updateCostPerMl);
-    baseConsInput.addEventListener('input', calculateMemjetMetrics);
-
-    function updateCostPerMl() {
-        const cost = parseFloat(cartridgeCostInput.value) || 0;
-        const vol = parseFloat(cartridgeVolumeInput.value) || 0;
-
-        if (vol > 0) {
-            const calculatedMlCost = cost / vol;
-            costPerMlInput.value = calculatedMlCost.toFixed(2);
-        } else {
-            costPerMlInput.value = 0;
-        }
-
-        calculateMemjetMetrics();
-    }
-
-    async function processPDF(file) {
-        if (file.type !== "application/pdf") {
-            alert("Sube un formato PDF válido.");
+    async function handleFile(file) {
+        if (file.type !== 'application/pdf') {
+            alert('Por favor selecciona un archivo PDF válido.');
             return;
         }
 
         loading.style.display = 'block';
         results.style.display = 'none';
 
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            const page = await pdf.getPage(1);
-            
-            const viewport = page.getViewport({ scale: 1.0 }); 
-            
-            const ptW = viewport.width;
-            const ptH = viewport.height;
+        const fileArrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: fileArrayBuffer }).promise;
+        const page = await pdf.getPage(1);
 
-            const mmW = ptW * 0.352778;
-            const mmH = ptH * 0.352778;
-            
-            labelAreaMm2 = mmW * mmH;
-            labelAreaCm2 = labelAreaMm2 / 100;
+        const viewport = page.getViewport({ scale: 1.5 });
+        const widthMm = (viewport.width / 1.5) * (25.4 / 72);
+        const heightMm = (viewport.height / 1.5) * (25.4 / 72);
 
-            const scale = 1.5; 
-            const renderViewport = page.getViewport({ scale: scale, rotation: page.rotate });
-            
-            canvas.width = renderViewport.width;
-            canvas.height = renderViewport.height;
+        const canvas = document.getElementById('pdfCanvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
-            await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
 
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imgData.data;
-            const totalPixels = canvas.width * canvas.height;
+        const imgData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        
+        let sumC = 0, sumM = 0, sumY = 0, sumK = 0;
+        const totalPixels = imgData.length / 4;
 
-            let sumC = 0, sumM = 0, sumY = 0, sumK = 0;
+        for (let i = 0; i < imgData.length; i += 4) {
+            const r = imgData[i] / 255;
+            const g = imgData[i + 1] / 255;
+            const b = imgData[i + 2] / 255;
 
-            for (let i = 0; i < data.length; i += 4) {
-                let r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+            const k = 1 - Math.max(r, g, b);
+            const c = k === 1 ? 0 : (1 - r - k) / (1 - k);
+            const m = k === 1 ? 0 : (1 - g - k) / (1 - k);
+            const y = k === 1 ? 0 : (1 - b - k) / (1 - k);
 
-                if (a === 0) continue; 
-
-                let rNorm = r / 255;
-                let gNorm = g / 255;
-                let bNorm = b / 255;
-
-                let k = 1 - Math.max(rNorm, gNorm, bNorm);
-                let c = (k === 1) ? 0 : (1 - rNorm - k) / (1 - k);
-                let m = (k === 1) ? 0 : (1 - gNorm - k) / (1 - k);
-                let y = (k === 1) ? 0 : (1 - bNorm - k) / (1 - k);
-
-                sumC += c; sumM += m; sumY += y; sumK += k;
-            }
-
-            totalCmykFactor = (sumC + sumM + sumY + sumK) / totalPixels;
-
-            document.getElementById('mmWidth').textContent = `${mmW.toFixed(1)} mm`;
-            document.getElementById('mmHeight').textContent = `${mmH.toFixed(1)} mm`;
-            document.getElementById('areaMm2').textContent = `${labelAreaMm2.toLocaleString(undefined, {maximumFractionDigits: 2})} mm²`;
-            document.getElementById('areaCm2').textContent = `${labelAreaCm2.toFixed(2)} cm²`;
-
-            document.getElementById('cyanVal').textContent = `${((sumC / totalPixels) * 100).toFixed(1)}%`;
-            document.getElementById('magentaVal').textContent = `${((sumM / totalPixels) * 100).toFixed(1)}%`;
-            document.getElementById('yellowVal').textContent = `${((sumY / totalPixels) * 100).toFixed(1)}%`;
-            document.getElementById('blackVal').textContent = `${((sumK / totalPixels) * 100).toFixed(1)}%`;
-            document.getElementById('totalCmykPercent').textContent = `${(totalCmykFactor * 100).toFixed(1)}%`;
-
-            updateCostPerMl();
-
-            loading.style.display = 'none';
-            results.style.display = 'block';
-
-        } catch (error) {
-            console.error(error);
-            alert("Error procesando los canales gráficos de la etiqueta.");
-            loading.style.display = 'none';
+            sumC += c;
+            sumM += m;
+            sumY += y;
+            sumK += k;
         }
+
+        currentAnalysis = {
+            widthMm,
+            heightMm,
+            cPercent: (sumC / totalPixels) * 100,
+            mPercent: (sumM / totalPixels) * 100,
+            yPercent: (sumY / totalPixels) * 100,
+            kPercent: (sumK / totalPixels) * 100,
+        };
+
+        loading.style.display = 'none';
+        results.style.display = 'block';
+        renderResults(currentAnalysis);
     }
 
-    function calculateMemjetMetrics() {
-        const baseConsVal = parseFloat(baseConsInput.value) || 0;
-        const consumoBaseMm2 = baseConsVal / 1000000;
+    function renderResults(data) {
+        const areaMm2 = data.widthMm * data.heightMm;
+        const areaCm2 = areaMm2 / 100;
 
-        if (baseConsHelp) {
-            baseConsHelp.textContent = `Equivale a ${consumoBaseMm2.toFixed(8)} ml por mm² neta`;
-        }
+        document.getElementById('mmWidth').innerText = `${data.widthMm.toFixed(1)} mm`;
+        document.getElementById('mmHeight').innerText = `${data.heightMm.toFixed(1)} mm`;
+        document.getElementById('areaMm2').innerText = `${areaMm2.toFixed(2)} mm²`;
+        document.getElementById('areaCm2').innerText = `${areaCm2.toFixed(2)} cm²`;
 
-        if (labelAreaMm2 === 0) return;
+        document.getElementById('cyanVal').innerText = `${data.cPercent.toFixed(1)}%`;
+        document.getElementById('magentaVal').innerText = `${data.mPercent.toFixed(1)}%`;
+        document.getElementById('yellowVal').innerText = `${data.yPercent.toFixed(1)}%`;
+        document.getElementById('blackVal').innerText = `${data.kPercent.toFixed(1)}%`;
 
+        const baseCons = parseFloat(baseConsInput.value) || 8;
         const costPerMl = parseFloat(costPerMlInput.value) || 0;
 
-        const mlRealPerMm2 = consumoBaseMm2 * totalCmykFactor;
-        const totalMlLabel = mlRealPerMm2 * labelAreaMm2;
-        const totalCostLabel = totalMlLabel * costPerMl;
+        const baseMlPerMm2 = baseCons / 1000000;
 
-        document.getElementById('mlPerSingleMm2').textContent = `${mlRealPerMm2.toFixed(8)} ml`;
-        document.getElementById('totalMlSpent').textContent = `${totalMlLabel.toFixed(5)} ml`;
-        document.getElementById('calculatedCost').textContent = `$${totalCostLabel.toFixed(2)}`;
+        const cMlMm2 = (data.cPercent / 100) * baseMlPerMm2;
+        const mMlMm2 = (data.mPercent / 100) * baseMlPerMm2;
+        const yMlMm2 = (data.yPercent / 100) * baseMlPerMm2;
+        const kMlMm2 = (data.kPercent / 100) * baseMlPerMm2;
+
+        const totalMlPerMm2 = cMlMm2 + mMlMm2 + yMlMm2 + kMlMm2;
+        const totalMlLabel = totalMlPerMm2 * areaMm2;
+        const totalCost = totalMlLabel * costPerMl;
+
+        document.getElementById('totalMlSpent').innerText = `${totalMlLabel.toFixed(5)} ml`;
+        document.getElementById('calculatedCost').innerText = `$${totalCost.toFixed(4)}`;
+
+        document.getElementById('cyanMlMm2').innerText = `${cMlMm2.toFixed(8)} ml`;
+        document.getElementById('magentaMlMm2').innerText = `${mMlMm2.toFixed(8)} ml`;
+        document.getElementById('yellowMlMm2').innerText = `${yMlMm2.toFixed(8)} ml`;
+        document.getElementById('blackMlMm2').innerText = `${kMlMm2.toFixed(8)} ml`;
     }
 </script>
 
